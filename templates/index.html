@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeServe</title>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</head>
+<body>
+    <h1>HomeServe: Local Collection of Web Tools</h1>
+    
+    <h2>Available Tools:</h2>
+    <ul>
+        <li><a href="{{ url_for('audio_converter') }}">YouTube to MP3 Converter</a></li>
+    </ul>
+</body>
+</html>

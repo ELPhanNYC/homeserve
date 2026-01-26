@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Converter</title>
+</head>
+<body>
+    <h1>Audio Converter - YouTube to MP3</h1>
+    <div id="content">
+        <div id="single-download">
+            <p>Convert a Single Link</p>
+            <form id="single-convert" method="POST">
+                <input name="url" type="text" placeholder="YouTube URL">
+                <br>
+                <input type="submit" value="Submit Single">
+            </form>
+        </div>
+        <p>- or -</p>
+        <div id="bulk-download">
+            <p>Upload a .txt file with multiple songs</p>
+                <form id="bulk-convert" method="POST">
+                    <input type="file" id="file" name="file" accept=".txt" required>
+                    <br>
+                    <input type="submit" value="Submit Bulk">
+                </form>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/audio-converter.js') }}"></script>
+</body>
+</html>
