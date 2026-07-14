@@ -21,3 +21,4 @@ def convertToMp3(url, dir, bitrate):
         filename = ydl.prepare_filename(info)
         return filename.rsplit(".", 1)[0] + ".mp3"
     
+# convertToMp3("https://www.youtube.com/watch?v=wBHbQtuLlj0", "~/Downloads", 192)

@@ -4,7 +4,8 @@ import tempfile
 import os
 import zipfile
 import uuid
-import services.converter as convert
+import services.audio_converter as convert
+import services.image_formatter as format
 
 app = Flask(__name__)
 CORS(app)
@@ -86,7 +87,50 @@ def audio_download_bulk():
             download_name="audios.zip",
             mimetype="application/zip"
         )
+    
+@app.route("/format-image", methods=["GET", "POST"])
+def format_image():
+    if request.method == "GET":
+        return render_template("format-image.html")
+
+    if request.method == "POST":
+        if "image" not in request.files:
+            abort(400, "Missing image.")
+
+        uploaded = request.files.getlist("image")
+        req_format = request.form.get("format").lower()
+
+        if not req_format:
+            abort(400, "Missing conversion format.")
+
+        accepted_formats = {"jpg", "jpeg", "png", "webp", "bmp", "heic"}
+        if req_format not in accepted_formats:
+            abort(400, "Requested conversion format is not accepted.")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_dir = os.path.join(tmpdir, "img")
+            os.makedirs(img_dir, exist_ok=True)
+
+            converted = []
+
+            for upload in uploaded:
+                converted.append(
+                    format.formatImage(upload, img_dir, req_format)
+                )
+
+            zip_path = os.path.join(tmpdir, "converted_images.zip")
+
+            with zipfile.ZipFile(zip_path, "w") as z:
+                for path in converted:
+                    z.write(path, os.path.basename(path))
+
+            return send_file(
+                zip_path,
+                as_attachment=True,
+                download_name="converted_images.zip",
+                mimetype="application/zip",
+            )
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
