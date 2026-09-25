@@ -2,13 +2,45 @@ from flask import Flask, request, send_file, abort, render_template
 from flask_cors import CORS
 import tempfile
 import os
+import io
 import zipfile
 import uuid
+import logging
+from PIL import UnidentifiedImageError
+from werkzeug.utils import secure_filename
 import services.audio_converter as convert
 import services.image_formatter as format
 
 app = Flask(__name__)
 CORS(app)
+
+# NSSM discards stdout/stderr, so write errors (with tracebacks) to a file
+LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+_log_handler = logging.FileHandler(os.path.join(LOG_DIR, "app.log"), encoding="utf-8")
+_log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+app.logger.addHandler(_log_handler)
+app.logger.setLevel(logging.INFO)
+logging.getLogger("werkzeug").addHandler(_log_handler)
+
+import sys, getpass, PIL
+app.logger.info(
+    "startup exe=%s cwd=%s user=%s file=%s pillow=%s temp=%s",
+    sys.executable, os.getcwd(), getpass.getuser(), os.path.abspath(__file__),
+    PIL.__version__, tempfile.gettempdir(),
+)
+
+@app.errorhandler(500)
+def _log_500(e):
+    original = getattr(e, "original_exception", None)
+    if original is not None:
+        app.logger.error("500 on %s %s", request.method, request.path,
+                         exc_info=(type(original), original, original.__traceback__))
+    else:
+        import traceback
+        app.logger.error("500 on %s %s (no original exception)\n%s",
+                         request.method, request.path, "".join(traceback.format_stack()))
+    return e
 
 @app.route("/", methods=["GET"])
 def index():
@@ -88,49 +120,49 @@ def audio_download_bulk():
             mimetype="application/zip"
         )
     
+ACCEPTED_FORMATS = set(format.PIL_FORMATS)
+
 @app.route("/format-image", methods=["GET", "POST"])
 def format_image():
     if request.method == "GET":
         return render_template("format-image.html")
 
-    if request.method == "POST":
-        if "image" not in request.files:
-            abort(400, "Missing image.")
+    uploads = [f for f in request.files.getlist("image") if f and f.filename]
+    if not uploads:
+        abort(400, "Missing image.")
 
-        uploaded = request.files.getlist("image")
-        req_format = request.form.get("format").lower()
+    req_format = (request.form.get("format") or "").strip().lower()
+    if not req_format:
+        abort(400, "Missing conversion format.")
+    if req_format not in ACCEPTED_FORMATS:
+        abort(400, "Requested conversion format is not accepted.")
 
-        if not req_format:
-            abort(400, "Missing conversion format.")
+    zip_buf = io.BytesIO()
+    used_names = set()
 
-        accepted_formats = {"jpg", "jpeg", "png", "webp", "bmp", "heic"}
-        if req_format not in accepted_formats:
-            abort(400, "Requested conversion format is not accepted.")
+    with zipfile.ZipFile(zip_buf, "w") as z:
+        for upload in uploads:
+            try:
+                data = format.formatImage(upload, req_format)
+            except (UnidentifiedImageError, OSError):
+                abort(400, f"Could not read {upload.filename} as an image.")
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            img_dir = os.path.join(tmpdir, "img")
-            os.makedirs(img_dir, exist_ok=True)
+            stem = os.path.splitext(secure_filename(upload.filename))[0] or "image"
+            name = f"{stem}.{req_format}"
+            n = 1
+            while name in used_names:
+                name = f"{stem}_{n}.{req_format}"
+                n += 1
+            used_names.add(name)
+            z.writestr(name, data)
 
-            converted = []
-
-            for upload in uploaded:
-                converted.append(
-                    format.formatImage(upload, img_dir, req_format)
-                )
-
-            zip_path = os.path.join(tmpdir, "converted_images.zip")
-
-            with zipfile.ZipFile(zip_path, "w") as z:
-                for path in converted:
-                    z.write(path, os.path.basename(path))
-
-            return send_file(
-                zip_path,
-                as_attachment=True,
-                download_name="converted_images.zip",
-                mimetype="application/zip",
-            )
-
+    zip_buf.seek(0)
+    return send_file(
+        zip_buf,
+        as_attachment=True,
+        download_name="images.zip",
+        mimetype="application/zip",
+    )
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port="5001")
+    app.run(host="0.0.0.0", port=5001)
