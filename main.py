@@ -1,6 +1,7 @@
 from flask import Flask, request, send_file, abort, render_template
 from flask_cors import CORS
 import tempfile
+import shutil
 import os
 import io
 import zipfile
@@ -37,10 +38,21 @@ def _log_500(e):
         app.logger.error("500 on %s %s", request.method, request.path,
                          exc_info=(type(original), original, original.__traceback__))
     else:
-        import traceback
-        app.logger.error("500 on %s %s (no original exception)\n%s",
-                         request.method, request.path, "".join(traceback.format_stack()))
+        # raised via abort(500, ...) -- the reason is in the description
+        app.logger.error("500 on %s %s: %s", request.method, request.path, e.description)
     return e
+
+def _cleanup(path):
+    shutil.rmtree(path, ignore_errors=True)
+
+def _send_then_cleanup(tmpdir, path, **kwargs):
+    # send_file streams the file after the view returns, and Windows can't
+    # delete an open file -- so remove the temp dir once the response closes
+    response = send_file(path, **kwargs)
+    # with passthrough on, werkzeug never calls response.close() (or our hook)
+    response.direct_passthrough = False
+    response.call_on_close(lambda: _cleanup(tmpdir))
+    return response
 
 @app.route("/", methods=["GET"])
 def index():
@@ -59,19 +71,21 @@ def audio_download():
     if not url:
         abort(400, "Missing URL")
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        try:
-            mp3_path = convert.convertToMp3(url, tmpdir, 192)
-        except Exception as e:
-            abort(500, f"Failed to process URL: {e}")
+    tmpdir = tempfile.mkdtemp()
+    try:
+        mp3_path = convert.convertToMp3(url, tmpdir, 192)
+    except Exception as e:
+        _cleanup(tmpdir)
+        abort(500, f"Failed to process URL: {e}")
 
-        return send_file(
-            mp3_path,
-            as_attachment=True,
-            download_name=os.path.basename(mp3_path),
-            mimetype="audio/mpeg"
-        )
-    
+    return _send_then_cleanup(
+        tmpdir,
+        mp3_path,
+        as_attachment=True,
+        download_name=os.path.basename(mp3_path),
+        mimetype="audio/mpeg"
+    )
+
 @app.route("/audio-download-bulk", methods=["POST"])
 def audio_download_bulk():
     if "file" not in request.files:
@@ -90,35 +104,37 @@ def audio_download_bulk():
     if not urls:
         abort(400, "No URLs found")
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        mp3_dir = os.path.join(tmpdir, "mp3")
-        os.makedirs(mp3_dir, exist_ok=True)
+    tmpdir = tempfile.mkdtemp()
+    mp3_dir = os.path.join(tmpdir, "mp3")
+    os.makedirs(mp3_dir, exist_ok=True)
 
-        mp3_files = []
+    mp3_files = []
 
-        for url in urls:
-            try:
-                mp3_path = convert.convertToMp3(url, mp3_dir, 192)
-                mp3_files.append(mp3_path)
-            except Exception as e:
-                print(f"Failed: {url} -> {e}")
+    for url in urls:
+        try:
+            mp3_path = convert.convertToMp3(url, mp3_dir, 192)
+            mp3_files.append(mp3_path)
+        except Exception as e:
+            app.logger.warning("Failed: %s -> %s", url, e)
 
-        if not mp3_files:
-            abort(500, "No files could be processed")
+    if not mp3_files:
+        _cleanup(tmpdir)
+        abort(500, "No files could be processed")
 
-        zip_name = f"mp3_batch_{uuid.uuid4().hex}.zip"
-        zip_path = os.path.join(tmpdir, zip_name)
+    zip_name = f"mp3_batch_{uuid.uuid4().hex}.zip"
+    zip_path = os.path.join(tmpdir, zip_name)
 
-        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-            for mp3 in mp3_files:
-                zipf.write(mp3, arcname=os.path.basename(mp3))
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for mp3 in mp3_files:
+            zipf.write(mp3, arcname=os.path.basename(mp3))
 
-        return send_file(
-            zip_path,
-            as_attachment=True,
-            download_name="audios.zip",
-            mimetype="application/zip"
-        )
+    return _send_then_cleanup(
+        tmpdir,
+        zip_path,
+        as_attachment=True,
+        download_name="audios.zip",
+        mimetype="application/zip"
+    )
     
 ACCEPTED_FORMATS = set(format.PIL_FORMATS)
 
