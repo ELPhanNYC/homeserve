@@ -12,6 +12,9 @@ def convertToMp3(url, dir, bitrate):
     if '?is=' in url:
         vid_hash = url.split('?is=')[0].split('https://youtu.be/')[1]
         url = 'https://youtu.be/watch?v=' + vid_hash
+    elif '?si=' in url:
+            vid_hash = url.split('?si=')[0].split('https://youtu.be/')[1]
+            url = 'https://youtu.be/watch?v=' + vid_hash    
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": os.path.join(dir, "%(title)s.%(ext)s"),
