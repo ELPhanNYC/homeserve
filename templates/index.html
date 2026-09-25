@@ -4,15 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HomeServe</title>
-    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
-</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/index.js') }}" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
 <body>
-    <h1>HomeServe: Local Collection of Web Tools</h1>
-    
-    <h2>Available Tools:</h2>
-    <ul>
-        <li><a href="{{ url_for('audio_converter') }}">YouTube to MP3 Converter</a></li>
-        <li><a href="{{ url_for('format_image') }}">Image Formatter</a></li>
-    </ul>
+    <div class="page">
+        <h1>HomeServe</h1>
+        <p class="subtitle">Local collection of web tools</p>
+
+        <ul class="tool-list">
+            <li><a href="{{ url_for('audio_converter') }}">YouTube to MP3 Converter</a></li>
+            <li><a href="{{ url_for('format_image') }}">Image Formatter</a></li>
+        </ul>
+    </div>
 </body>
 </html>

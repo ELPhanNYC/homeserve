@@ -4,28 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audio Converter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>Audio Converter - YouTube to MP3</h1>
-    <div id="content">
-        <div id="single-download">
-            <p>Convert a Single Link</p>
+    <div class="page">
+        <div class="header">
+            <a href="{{ url_for('index') }}" class="back-link">← Back</a>
+            <br>
+            <h1>Audio Converter</h1>
+            <p class="subtitle">YouTube to MP3</p>
+        </div>
+
+        <div class="card" id="single-download">
+            <p class="section-label">Convert a single link</p>
             <form id="single-convert" method="POST">
                 <input name="url" type="text" placeholder="YouTube URL">
-                <br>
-                <input type="submit" value="Submit Single">
+                <input type="submit" value="Convert">
             </form>
         </div>
-        <p>- or -</p>
-        <div id="bulk-download">
-            <p>Upload a .txt file with multiple songs</p>
-                <form id="bulk-convert" method="POST">
-                    <input type="file" id="file" name="file" accept=".txt" required>
-                    <br>
-                    <input type="submit" value="Submit Bulk">
-                </form>
+
+        <div class="divider">or</div>
+
+        <div class="card" id="bulk-download">
+            <p class="section-label">Upload a .txt file with multiple links</p>
+            <form id="bulk-convert" method="POST">
+                <input type="file" id="file" name="file" accept=".txt" required>
+                <input type="submit" value="Convert All">
+            </form>
         </div>
     </div>
-    <script src="{{ url_for('static', filename='js/audio-converter.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/audio-converter.js') }}" defer></script>
 </body>
 </html>

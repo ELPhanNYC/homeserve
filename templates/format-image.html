@@ -3,27 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Format/Conversion Tool</title>
-</head>
+    <title>Image Formatter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
 <body>
-    <h1>Image Format/Conversion Tool</h1>
-    <div id="content">
-        <p>Upload an Image and Convert to an Available Format</p>
-        <form id="format-image" method="POST" enctype="multipart/form-data">
-            <input type="file" id="image" name="image" accept="image/*" multiple required>
+    <div class="page">
+        <div class="header">
+            <a href="{{ url_for('index') }}" class="back-link">← Back</a>
             <br>
-            <select name="format" required>
-                <option value="">Select format</option>
-                <option value="png">PNG</option>
-                <option value="jpg">JPG</option>
-                <option value="webp">WEBP</option>
-                <option value="bmp">BMP</option>
-                <option value="heic">HEIC</option>
-            </select>
-            <br>
-            <input type="submit" value="Submit Bulk">
-        </form>
+            <h1>Image Formatter</h1>
+            <p class="subtitle">Upload images and convert them to another format</p>
+        </div>
+
+        <div class="card">
+            <form id="format-image" method="POST" enctype="multipart/form-data">
+                <input type="file" id="image" name="image" accept="image/*" multiple required>
+                <select name="format" required>
+                    <option value="">Select format</option>
+                    <option value="png">PNG</option>
+                    <option value="jpg">JPG</option>
+                    <option value="webp">WEBP</option>
+                    <option value="bmp">BMP</option>
+                    <option value="heic">HEIC</option>
+                </select>
+                <input type="submit" value="Convert">
+            </form>
+        </div>
     </div>
-    <script src="{{ url_for('static', filename='js/format-image.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/format-image.js') }}" defer></script>
 </body>
 </html>
