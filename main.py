@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file, abort, render_template
+from flask import Flask, Response, request, send_file, abort, render_template
 from flask_cors import CORS
 import tempfile
 import shutil
@@ -9,8 +9,16 @@ import uuid
 import logging
 from PIL import UnidentifiedImageError
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 import services.audio_converter as convert
 import services.image_formatter as format
+
+# NSSM may start us from a different cwd, so load .env from next to this file
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+
+# after load_dotenv: these read env vars at import time
+import services.rtsp_config as rtsp
+from services.camera_stream import CameraStream, BOUNDARY
 
 app = Flask(__name__)
 CORS(app)
@@ -53,6 +61,11 @@ def _send_then_cleanup(tmpdir, path, **kwargs):
     response.direct_passthrough = False
     response.call_on_close(lambda: _cleanup(tmpdir))
     return response
+
+# browsers request /favicon.ico on their own, e.g. for non-HTML responses
+@app.route("/favicon.ico")
+def favicon():
+    return app.send_static_file("assets/homeserve-logo.ico")
 
 @app.route("/", methods=["GET"])
 def index():
@@ -178,6 +191,28 @@ def format_image():
         as_attachment=True,
         download_name="images.zip",
         mimetype="application/zip",
+    )
+
+# Built once at startup from .env; restart the app after editing camera settings
+CAMERAS = {
+    name: CameraStream(name, url, app.logger)
+    for name, url in rtsp.getCameras().items()
+}
+
+@app.route("/cameras", methods=["GET"])
+def cameras():
+    # only names go to the browser -- the URLs contain credentials
+    return render_template("cameras.html", cameras=list(CAMERAS))
+
+@app.route("/cameras/<name>/stream", methods=["GET"])
+def camera_stream(name):
+    stream = CAMERAS.get(name)
+    if stream is None:
+        abort(404, "Unknown camera.")
+    return Response(
+        stream.frames(),
+        mimetype=f"multipart/x-mixed-replace; boundary={BOUNDARY.decode()}",
+        headers={"Cache-Control": "no-store"},
     )
 
 if __name__ == "__main__":

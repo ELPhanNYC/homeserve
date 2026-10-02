@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cameras</title>
+    <link rel="icon" href="{{ url_for('static', filename='assets/homeserve-logo.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='assets/homeserve-logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="page page-wide">
+        <div class="header">
+            <a href="{{ url_for('index') }}" class="back-link">← Back</a>
+            <br>
+            <h1>Cameras</h1>
+            <p class="subtitle">Live view of your RTSP cameras. Click a feed for fullscreen.</p>
+        </div>
+
+        {% if cameras %}
+        <div class="camera-grid">
+            {% for name in cameras %}
+            <figure class="card camera" data-src="{{ url_for('camera_stream', name=name) }}">
+                <div class="camera-frame">
+                    <img alt="{{ name.replace('_', ' ') }} live feed">
+                    <div class="status" role="status" aria-live="polite">
+                        <span class="spinner" aria-hidden="true"></span>
+                        <span class="status-text">Connecting…</span>
+                    </div>
+                </div>
+                <figcaption>{{ name.replace('_', ' ') }}</figcaption>
+            </figure>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card">
+            <p class="subtitle">No cameras configured. Add <code>RTSP_CAMERA_&lt;NAME&gt;</code> entries to <code>.env</code> and restart the app.</p>
+        </div>
+        {% endif %}
+    </div>
+    <script src="{{ url_for('static', filename='js/cameras.js') }}" defer></script>
+</body>
+</html>

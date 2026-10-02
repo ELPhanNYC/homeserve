@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HomeServe</title>
+    <link rel="icon" href="{{ url_for('static', filename='assets/homeserve-logo.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='assets/homeserve-logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="{{ url_for('static', filename='js/index.js') }}" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +19,7 @@
         <ul class="tool-list">
             <li><a href="{{ url_for('audio_converter') }}">YouTube to MP3 Converter</a></li>
             <li><a href="{{ url_for('format_image') }}">Image Formatter</a></li>
+            <li><a href="{{ url_for('cameras') }}">Cameras</a></li>
         </ul>
     </div>
 </body>
