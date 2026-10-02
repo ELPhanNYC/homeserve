@@ -215,3 +215,49 @@ input[type="submit"]:hover {
     margin-bottom: 4px;
     color: var(--accent2);
 }
+input[type="submit"]:disabled {
+    filter: grayscale(0.6) brightness(0.8);
+    transform: none;
+    cursor: progress;
+}
+
+/* Processing status: spinner + elapsed time, or an error message */
+.status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.status[hidden] {
+    display: none;
+}
+
+.spinner {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.12);
+    border-top-color: var(--accent);
+    border-right-color: var(--accent2);
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner { animation-duration: 2.4s; }
+}
+
+.status.error {
+    color: var(--accent3);
+}
+
+.status.error .spinner {
+    display: none;
+}

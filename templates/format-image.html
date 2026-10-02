@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
 <body>
     <div class="page">
         <div class="header">
@@ -30,8 +31,13 @@
                 </select>
                 <input type="submit" value="Convert">
             </form>
+            <div class="status" role="status" aria-live="polite" hidden>
+                <span class="spinner" aria-hidden="true"></span>
+                <span class="status-text"></span>
+            </div>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/common.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/format-image.js') }}" defer></script>
 </body>
 </html>

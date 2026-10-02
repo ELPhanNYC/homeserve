@@ -1,4 +1,5 @@
 import yt_dlp
+from yt_dlp.postprocessor.metadataparser import MetadataParserPP
 import os
 
 # Services (e.g. NSSM running as LocalSystem) don't inherit the user PATH,
@@ -18,12 +19,38 @@ def convertToMp3(url, dir, bitrate):
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": os.path.join(dir, "%(title)s.%(ext)s"),
+        "writethumbnail": True,
         "postprocessors": [
+            # blank the description/synopsis tags -- otherwise the whole video
+            # description (links, lyrics, promo text) gets stuffed into the MP3
+            {
+                "key": "MetadataParser",
+                "when": "pre_process",
+                "actions": [
+                    (MetadataParserPP.Actions.INTERPRET, "", "(?P<meta_description>)"),
+                    (MetadataParserPP.Actions.INTERPRET, "", "(?P<meta_synopsis>)"),
+                ],
+            },
+            # YouTube thumbnails are usually webp; MP3 cover art needs jpg
+            {
+                "key": "FFmpegThumbnailsConvertor",
+                "format": "jpg",
+                "when": "before_dl",
+            },
             {
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "mp3",
                 "preferredquality": bitrate,
-            }
+            },
+            # writes title / artist / album / date tags (ID3)
+            {
+                "key": "FFmpegMetadata",
+                "add_metadata": True,
+            },
+            # embeds the thumbnail as cover art, then deletes the image file
+            {
+                "key": "EmbedThumbnail",
+            },
         ],
         "noplaylist": True,
         "quiet": True,

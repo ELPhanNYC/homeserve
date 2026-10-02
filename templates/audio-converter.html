@@ -21,9 +21,13 @@
         <div class="card" id="single-download">
             <p class="section-label">Convert a single link</p>
             <form id="single-convert" method="POST">
-                <input name="url" type="text" placeholder="YouTube URL">
+                <input name="url" type="text" placeholder="YouTube URL" required>
                 <input type="submit" value="Convert">
             </form>
+            <div class="status" role="status" aria-live="polite" hidden>
+                <span class="spinner" aria-hidden="true"></span>
+                <span class="status-text"></span>
+            </div>
         </div>
 
         <div class="divider">or</div>
@@ -34,8 +38,13 @@
                 <input type="file" id="file" name="file" accept=".txt" required>
                 <input type="submit" value="Convert All">
             </form>
+            <div class="status" role="status" aria-live="polite" hidden>
+                <span class="spinner" aria-hidden="true"></span>
+                <span class="status-text"></span>
+            </div>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/common.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/audio-converter.js') }}" defer></script>
 </body>
 </html>
