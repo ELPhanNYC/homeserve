@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Viewer</title>
+    <link rel="icon" href="{{ url_for('static', filename='assets/homeserve-logo.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='assets/homeserve-logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/logs.js') }}" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="page page-home">
+        <div class="header">
+            <a href="{{ url_for('index') }}" class="back-link">← Back</a>
+            <br>
+            <h1>Log Viewer</h1>
+            <p class="subtitle">Application logs from the last {{ retention_days }} days. Rotated daily at midnight.</p>
+        </div>
+
+        <section class="card log-card" data-files="{{ url_for('log_files') }}">
+            <div class="log-controls">
+                <label class="field">
+                    <span>File</span>
+                    <select id="log-file"></select>
+                </label>
+                <label class="field">
+                    <span>Level</span>
+                    <select id="log-level">
+                        <option value="0">All</option>
+                        <option value="1">Warnings &amp; errors</option>
+                        <option value="2">Errors only</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Show last</span>
+                    <select id="log-lines">
+                        <option value="500">500 lines</option>
+                        <option value="1000" selected>1,000 lines</option>
+                        <option value="5000">5,000 lines</option>
+                        <option value="20000">20,000 lines</option>
+                    </select>
+                </label>
+                <label class="field field-grow">
+                    <span>Search</span>
+                    <input type="text" id="log-search" placeholder="Filter messages…" autocomplete="off">
+                </label>
+            </div>
+
+            <div class="log-toolbar">
+                <label class="check"><input type="checkbox" id="log-hide-http" checked> Hide HTTP requests</label>
+                <label class="check"><input type="checkbox" id="log-auto" checked> Auto-refresh (5s)</label>
+                <span class="log-counts" id="log-counts"></span>
+                <a class="secondary-button log-download" id="log-download" href="#">Download</a>
+            </div>
+
+            <div class="log-view" id="log-view" role="log" aria-live="off" tabindex="0"></div>
+            <p class="dash-status" id="log-status" role="status" aria-live="polite"></p>
+        </section>
+    </div>
+</body>
+</html>

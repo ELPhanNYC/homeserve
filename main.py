@@ -6,13 +6,16 @@ import os
 import io
 import zipfile
 import uuid
+import re
 import logging
+from logging.handlers import TimedRotatingFileHandler
 from PIL import UnidentifiedImageError
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import services.audio_converter as convert
 import services.image_formatter as format
 import services.system_metrics as metrics
+import services.log_reader as logs
 
 # NSSM may start us from a different cwd, so load .env from next to this file
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
@@ -27,8 +30,27 @@ CORS(app)
 # NSSM discards stdout/stderr, so write errors (with tracebacks) to a file
 LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
-_log_handler = logging.FileHandler(os.path.join(LOG_DIR, "app.log"), encoding="utf-8")
+LOG_RETENTION_DAYS = 7
+
+# starts a fresh app.log at midnight; yesterday's becomes app.log.YYYY-MM-DD
+# and anything older than LOG_RETENTION_DAYS (counting today) is deleted
+_log_handler = TimedRotatingFileHandler(
+    os.path.join(LOG_DIR, "app.log"),
+    when="midnight",
+    backupCount=LOG_RETENTION_DAYS - 1,
+    encoding="utf-8",
+)
 _log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+
+# the dashboard and log viewer poll every 5s -- keep successful polls out of
+# the file or they bury everything else
+_POLLING_REQUEST = re.compile(r'"GET /(metrics|logs/files)[^"]*" 200 ')
+
+class _SkipPolling(logging.Filter):
+    def filter(self, record):
+        return not _POLLING_REQUEST.search(record.getMessage())
+
+_log_handler.addFilter(_SkipPolling())
 app.logger.addHandler(_log_handler)
 app.logger.setLevel(logging.INFO)
 logging.getLogger("werkzeug").addHandler(_log_handler)
@@ -225,6 +247,33 @@ def camera_stream(name):
         mimetype=f"multipart/x-mixed-replace; boundary={BOUNDARY.decode()}",
         headers={"Cache-Control": "no-store"},
     )
+
+@app.route("/logs", methods=["GET"])
+def logs_page():
+    return render_template("logs.html", retention_days=LOG_RETENTION_DAYS)
+
+@app.route("/logs/files", methods=["GET"])
+def log_files():
+    response = jsonify(logs.listLogs(LOG_DIR))
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+@app.route("/logs/files/<name>", methods=["GET"])
+def log_file(name):
+    path = logs.resolveLog(LOG_DIR, name)
+    if path is None:
+        abort(404, "Unknown log file.")
+    max_lines = min(max(request.args.get("lines", 1000, type=int), 1), 20000)
+    response = jsonify({"name": name, **logs.tailLog(path, max_lines)})
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+@app.route("/logs/files/<name>/download", methods=["GET"])
+def log_download(name):
+    path = logs.resolveLog(LOG_DIR, name)
+    if path is None:
+        abort(404, "Unknown log file.")
+    return send_file(path, as_attachment=True, download_name=name, mimetype="text/plain")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)
