@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, send_file, abort, render_template
+from flask import Flask, Response, request, send_file, abort, render_template, jsonify
 from flask_cors import CORS
 import tempfile
 import shutil
@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import services.audio_converter as convert
 import services.image_formatter as format
+import services.system_metrics as metrics
 
 # NSSM may start us from a different cwd, so load .env from next to this file
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
@@ -70,6 +71,16 @@ def favicon():
 @app.route("/", methods=["GET"])
 def index():
     return render_template("index.html")
+
+@app.route("/metrics", methods=["GET"])
+def system_metrics():
+    response = jsonify(metrics.getMetrics())
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+@app.route("/password-generator", methods=["GET"])
+def password_generator():
+    return render_template("password-generator.html")
 
 @app.route("/audio-converter", methods=["GET"])
 def audio_converter():

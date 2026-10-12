@@ -11,16 +11,99 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
 <body>
-    <div class="page">
+    <div class="page page-home">
         <h1>HomeServe</h1>
         <p class="subtitle">Local collection of web tools</p>
 
         <ul class="tool-list">
+            <li><a href="{{ url_for('password_generator') }}">Password Generator</a></li>
             <li><a href="{{ url_for('audio_converter') }}">YouTube to MP3 Converter</a></li>
             <li><a href="{{ url_for('format_image') }}">Image Formatter</a></li>
             <li><a href="{{ url_for('cameras') }}">Cameras</a></li>
         </ul>
+
+        <main class="dashboard" aria-labelledby="dash-title" data-src="{{ url_for('system_metrics') }}">
+            <div class="dash-header">
+                <div>
+                    <h2 id="dash-title" class="dash-title">System</h2>
+                    <p class="dash-meta" id="dash-meta">Loading…</p>
+                </div>
+                <p class="dash-status" id="dash-status" role="status" aria-live="polite"></p>
+            </div>
+
+            <div class="gauge-grid" id="gauges"></div>
+
+            <div class="dash-grid">
+                <section class="card dash-card span-2">
+                    <div class="card-head">
+                        <h3>CPU &amp; memory · last 5 min</h3>
+                        <div class="legend" id="history-legend"></div>
+                    </div>
+                    <div class="chart" id="history-chart"></div>
+                </section>
+
+                <section class="card dash-card">
+                    <div class="card-head"><h3>CPU time</h3></div>
+                    <div class="pie-wrap" id="cpu-pie"></div>
+                </section>
+
+                <section class="card dash-card span-2">
+                    <div class="card-head">
+                        <h3>Per-core load</h3>
+                        <span class="card-note" id="core-note"></span>
+                    </div>
+                    <div class="chart" id="core-chart"></div>
+                </section>
+
+                <section class="card dash-card">
+                    <div class="card-head"><h3>Network</h3></div>
+                    <dl class="stat-pair">
+                        <div><dt>Download</dt><dd id="net-recv">–</dd></div>
+                        <div><dt>Upload</dt><dd id="net-sent">–</dd></div>
+                    </dl>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead><tr><th>Interface</th><th class="num">Down/s</th><th class="num">Up/s</th></tr></thead>
+                            <tbody id="nic-rows"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="card dash-card span-2">
+                    <div class="card-head">
+                        <h3>Top processes</h3>
+                        <span class="card-note" id="proc-note"></span>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="data-table" id="proc-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th class="num">PID</th>
+                                    <th class="num"><button type="button" class="sort" data-sort="cpu" aria-pressed="true">CPU</button></th>
+                                    <th class="num"><button type="button" class="sort" data-sort="rss" aria-pressed="false">Memory</button></th>
+                                </tr>
+                            </thead>
+                            <tbody id="proc-rows"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="card dash-card">
+                    <div class="card-head"><h3>Disks</h3></div>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead><tr><th>Drive</th><th class="num">Used</th><th class="num">Free</th><th class="num">Total</th></tr></thead>
+                            <tbody id="disk-rows"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
     </div>
+
+    <div class="chart-tooltip" id="tooltip" hidden></div>
 </body>
 </html>
